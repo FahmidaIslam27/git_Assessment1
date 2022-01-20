@@ -1,0 +1,292 @@
+---
+title: "s4669637_Fahmida_Islam_Assessment2"
+author: "Fahmida Islam s4669637"
+date: "20/01/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Setup: 5 marks
+
+1.Used the same R project for this assignment2 as I had created for assignment 1 and created a new .rmd document titled "s4669637_Fahmida_Islam_Assessment2"
+
+2.Used the given csv file for completing the task in part 1 and part 2 which will be uploaded in my project.
+
+
+
+```{r}
+#Firstly I will load all the required library to complete these task as I have already installed the packages
+
+library(tidyverse)
+library(knitr)
+library(skimr)
+library(tidymodels)
+library(modeldata)
+library(ggplot2)
+library(randomForest)
+
+```
+
+
+```{r}
+
+#Inserting R Chunks and creating variable with this Data set. Naming it as "thanksgivingmeals"
+
+
+thanksgivingmeals <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv")
+
+glimpse("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv")
+
+```
+
+
+3.For every question I have recorded my answer in the markdown file which includes the question, my code as well as the result.
+
+----------------------------------------------------------------------------------------------------------------------
+
+# Part 1: formatting RMarkdown document (2 marks)
+
+Below is the example of Webpage (my Github) as output
+
+Click [Here](https://github.com/FahmidaIslam27/git_Assessment1)
+
+Please Click [Here](https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv) to see the dataset I will be using for this assessment
+
+My Name in Italic font and my Student bold font as level 2 heading 
+
+## Name: *Fahmida Islam*
+## student ID: **S4669637**
+
+# Assignment 2
+
+separated with a solid line
+
+----------------------------------------------------------------------------------------------------------------------
+
+# Part 2: Data wrangling and visualization (38 marks)
+
+
+##1.Display the first 10 rows of the dataset using `kable()` function (1 marks).
+
+
+```{r}
+
+#Using 'kable' function to display first 10 rows of this dataset
+
+kable(thanksgivingmeals[1:10,])
+
+```
+
+
+##2. Using `skim()` display the summary of variables.Think about the task to predict a family income based on their menu: what variables may be useful? Are all of them correct type? Write 2-3 sentences with your explanation. (2 marks) Think about the task to predict a community type or US_region based on their menu: what variables may be useful? Are all of them correct type? (2 marks)
+
+```{r}
+
+#Using 'skim()' function for displaying the summary of variables
+
+skim(thanksgivingmeals)
+
+
+#From the given dataset if we consider a task to predict the family income from the menu, there could be mutiple variables which can be useful. For instance, the families who have the more number of sides (side 1, side2 and so on) present in their menu are likely to have higher family income.Similarly the families who have more number of pie and dessert present in their menu are likely to have higher family income.While we ran the skim function we can see that almost all of the variables are factor variable. Therefore I believe, they are correct type.
+
+# From the given dataset if we consider the task of predicting a community type based on the menu, there will be a number of variables that we can consider.For instance, looking at the main_dish variable, we can say what community the particular family belongs to. For instance if the main dish is Ham/pork, then the family most likely does not belong to Muslim community. Moreover, if the stuffing is bread-based then the community is most likely where the production of wheat is higher, on the other hand if the stffing is rice-based then the community belongs to where the rice production is higher.
+
+```
+
+##3. Use `fct_reorder` and `parse_number` functions to create a factor variable `family_income`(2 mark).
+
+```{r}
+
+# Utilizing 'fct_reorder' and 'parse_number' for creating factor variable 'family_income'
+
+thanksgivingmeals <- thanksgivingmeals %>%
+  mutate(family_income = fct_reorder(family_income,parse_number(family_income)))
+
+```
+
+
+##4. What is the number of people who celebrate? (1 mark)
+
+```{r}
+#Utilizing count function to find the number of people who celebrate and used sort data in order
+
+thanksgivingmeals %>%
+  count(celebrate, sort =TRUE)
+
+
+```
+
+
+##5. What are categories and insights for each main dish served and the method it is prepared? (2 marks)
+
+```{r}
+
+#Below coding demonstrates the categories of each main dish served and also insight is written underneath. 
+
+thanksgivingmeals %>%
+  count(main_dish, sort = TRUE)
+
+#From the table we can see that for majority of the people, the main dish is Turkey.Secondly, there is no data available for 84 people. Thirdly, it is mentioned as other (please specify)people which is 3.5%. Moreover, 29 families have Ham/Pork as their main dish which is 29 in number, 20 family has Tofurkey as their main dish, 12 families has chicken as their main dish, 11 families have Roast beef, 5 families information has been given as "I don't know" and 3 families have Turducken as their main dish.
+
+
+#Below coding demonstrates the method of each main dish prepared followed by the insight.
+
+thanksgivingmeals %>%
+  count(main_dish, main_prep, sort = TRUE)
+
+#From the above we can see that 422 families have Turkey as baked, whereas 351 families have Turkey as baked,There is no information about 84 families, 41 Families have Turkey as fried, 34 families have Turkey in other(please specify)way, 22 families have baked Ham/Pork
+
+
+```
+
+
+##6. Create 3 different data viz showing insights for main dish served and the method. Provide your own legend and use themes.Write 2-3 sentences with your explanation of each insight. (4 marks)
+
+```{r}
+#Visualization 1
+
+ggplot(thanksgivingmeals, aes(main_dish, main_prep)) +
+  geom_point(colour = "orange")+
+  coord_flip()
+
+
+#Visualization 2
+
+ggplot(thanksgivingmeals, aes(main_dish, main_prep, fill = main_prep)) +
+  geom_col(colour = "orange") +
+  theme_linedraw()+
+  coord_flip()
+
+#Visualization 3
+
+ggplot(thanksgivingmeals, aes(main_dish, main_prep)) +
+  geom_count(colour = "orange")+
+  coord_flip()
+
+#The above three visualization shows in a three different way of main dish and preparation method  are related.While considering the first visualization, Point graph has been used.From this graph we can find that it gives us an overview of if the chicken, Turkey or other main dishes are cooked or baked and similarly the other ones. In the second visualization Column graph has been utilized.From the second visualization we can see that most of the people eat Turkey and the mostly used preparation method is roasted(as it shows the pink lines within the bar for Turkey.Thus we can also get an insight of how other main dishes are prepared.To display the third visualization, count graph has been utilized. Though this graph looks similar to point graph, but from this one, we can see it gives us even a better view as it shows on the right side the number of times  a main dish is baked or cooked and so on. So the from the view we can get a better understanding about the data set
+
+```
+
+##7. How many use cranberry sauce? How many use gravy? 2marks
+
+```{r}
+#From the below coding, we can see the number of people uses cranberry sauce section wise.For instance, 502 families use canned cranberry sauce, whereas 301 families use homemade one and so on.
+
+thanksgivingmeals %>%
+  count(cranberry, sort = TRUE)
+
+##From the below coding, we can see the number of families use gravy.For instance, 892 families use gravy
+
+thanksgivingmeals %>%
+  count(gravy, sort = TRUE)
+
+
+```
+
+##8-9. What is the distribution of those who celebrate across income ranges. Create a data viz.
+Write 2-3 sentences with your explanation of each insight. (4 marks)
+
+```{r}
+
+thanksgivingmeals %>%
+  filter(celebrate == "Yes") %>%
+  ggplot(aes(family_income, celebrate)) +
+  geom_col() +
+  coord_flip()
+
+
+#From the output of the above coding, we can get an visualisation of the family income about who celebrates. Firstly, we can see that most of the families who celebrate, their income range is $25,000 to $49,999. There are very few families whose income range is $0 to 9,999 and this is the lowest income range. On the other hand the highest income range in this data set is $200,000 and up. There are quite a number of families who does not like to reveal the family income.
+
+```
+
+
+## 10. Use the following code to create a new data set 2 mark
+
+`
+select(id, starts_with("side"),
+         starts_with("pie"),
+         starts_with("dessert")) %>%
+  select(-side15, -pie13, -dessert12) %>%
+  gather(type, value, -id) %>%
+  filter(!is.na(value),
+         !value %in% c("None", "Other (please specify)")) %>%
+  mutate(type = str_remove(type, "\\d+"))
+`
+
+## Write 2-3 sentences with your explanation of what it does. (4 marks)
+
+```{r}
+
+#Utilizing the given code created a new dataset called 'meals_display'. An explanation is also given below discussing the function of the given code.
+
+meals_display <- thanksgivingmeals %>%
+      select(id, starts_with("side"),
+       starts_with("pie"),
+       starts_with("dessert")) %>%
+  select(-side15, -pie13, -dessert12) %>%
+  gather(type, value, -id) %>%
+  filter(!is.na(value),
+         !value %in% c("None", "Other (please specify)")) %>%
+  mutate(type = str_remove(type, "\\d+"))
+
+# In the above chunk of code, firstly we have named the new dataset as "ValueofSidePieDessert".Then for this newly created data set "select" function has been used to chose variables "id". And "starts_with" function has been used to select all the variables which has started with the prefix "side", "pie" and "dessert". Afterwards, "select" function has been used again to deselect "side15, pie13, dessert12". Later on, "gather" function has been used to develop a new table with "type" and "value" and to exclude "id". Finally, the "filter" has been used to exclude any row that contain missing value. At the very end mutate function has been used to create new variable from existing dataset without effecting the original data set.
+
+```
+
+## 11-12. Intall package `widyr` and use `pairwise_cor()` function https://www.rdocumentation.org/packages/widyr/versions/0.1.3/topics/pairwise_cor
+Write 2-3 sentences with your explanation of what it does. (2 marks)
+
+Use this code for the new dataset
+
+`
+pairwise_cor(value, id, sort = TRUE)
+
+`
+##Write 1 sentence with your explanation of what insights it shows. (2 marks)
+
+```{r}
+
+library(widyr)
+
+#The package 'widyr'helps to encapsulate the pattern of the untidy data into a wide matrix, perform some processing and finally turns it back into a tidy form.The function `pairwise_cor()`helps to look for the correlation among pairs in a collumn depending on a specific "feature" which links them together.This can be considered as an example of spread-operate-retidy pattern. Utilizing the pairwise correlation, identification of groups of hugely correlated features is possible and it also keeps one of them which allows the model to have more predictive power using as little features as possible.
+
+meals_display  %>%
+  pairwise_cor(value, id, sort = TRUE)
+
+# The table that has been developed from the above code shows the correlation among the pairs 'item1' and 'item2'. The correlation is demonstrated in numbers as demonstrated in output.
+
+```
+
+## 13. Use `lm()` or randomForest() function to build a model that predict a family income based on data in the dataset. 8 marks
+
+Compare 3 models using different set of input variables. Use different number of variables.
+
+Explain your choice of variables (3 sentences) 
+
+Write 2 sentences explaining which model os best.
+
+```{r}
+
+#Below are the three models where different set of input variables have been utilized. Afterwards reasining have been given for the selection of the modules followed by a comparison among the three models.
+
+rf <- randomForest(family_income ~ main_dish , data = thanksgivingmeals, na.action = na.omit)
+
+print(rf)
+
+
+rf1 <- randomForest(family_income ~ main_prep + cranberry, data = thanksgivingmeals, na.action = na.omit)
+print(rf1)
+
+
+rf2 <- randomForest(family_income ~ stuffing, data = thanksgivingmeals, na.action = na.omit)
+print(rf2)
+
+# For the first one I have selected input variable 'main_dish". The reason I have selected this variable is, assuming if a family has the main_dish as Turkey, then their family income is more likey higher as Turkey is more expensive than chicken and duck. Whereas if a family has other (for instance, vegetable) as main dish, then their family income is most likely lower.Similarly,For the second mode, assuming if the preperation method is baked, then the family income is higher as the family may have an oven to bake, if the method is roasted, then their family income lower. Lastly, for the third model, stuffing is used as input variable. assuming if the stuffing is bread based then the family income is higher and if it is rice based, then the family income is lower. 
+
+# From the output that we have got from the above models, where different set of input variables have been used, it is visible that all of them have extremely high error rate. The first model, which is rf has an error rate of 82.37%, The second one, rf1 model has 81.63% error rate and the last one rf2 has an error rate of 83.21%. Therefore, we can say that the best model would be the second one rf1.
+
+```
+
