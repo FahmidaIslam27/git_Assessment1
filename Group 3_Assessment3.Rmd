@@ -1,0 +1,283 @@
+---
+title: "Assessment 3_Group3"
+author: "Fahmida Islam s4669637"
+date: "05/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(ggplot2)
+library(tidyverse)
+library(skimr)
+library(knitr)
+library(tidymodels)
+library(modeldata)
+library(randomForest)
+library(datasets)
+
+```
+
+#EXECUTIVE SUMMARY
+
+The given data set "Grosses" provides us overview of the weekly overall grosses of Broadway musical theater along with 14 important variables.Through various types of visualization we demonstrated how the total gross revenue can be increased for Broadway.In addition we have also addressed the shows that attracts more audience and considered avarage ticket price and performance.Since Broadway theater is planning to reopen in mid of this year with new rules after been closed since the start of the COVID-19 Pandemic.  We have pinned down 10 shows which has the highest occupancy number. Therefore, if the investors invest in those shows it is more likely to  be profitable for them & thus it will help them to earn more revenue. Through this report we have highlighted the fact that the theatre which got more number of seats should be able to accommodate more audience as per the new social distancing rules. So our recommendation is to invest in those top 10 shows and screen them in the top 10 theatre which got the highest number of seats. This will help to increase the total gross revenue for Broadway.
+
+#INTRODUCTION
+
+Brodway theatre has not reported full grosses since performances were suspended back on March 12, 2020. It has been advised full reporting would be discounted until a normal seasonentre along Broadway in New York city.So we anticipate the grosses to return in mid 2022. This report has been generated targeting a specific group of stakeholders, who are interested or thinking of investing money to produce more shows that help to increase the revenue when Broadway will back in the mid of this year. Moreover this report will demonstrate a visualisation through which the potential investors will get an understanding of which show is more likely to earn a larger revenue, audience capacity of the theatres and an overview of the ticket prices.Both Linear modelling and classical modelling have been used for this purpose and also visualization has been utilized.
+
+#BUSINESS PROBLEM:
+
+In the section below we have developed a major question and then two sub questions. The major question will be mainly addressing how the total gross revenue can be increased for Broadway.The visualization will be useful to convince the potential investors.Throughout this report we will break down the major question into two parts. In the first sub question, we will predict the type of popular shows that can attract more audience and the popularity of the shows on the basis of seats sold. Here, we are referring the number of seats sold as the number of audience because, the more occupancy in the theatre means more audience in theatre. In the second sub-question, a prediction will be demonstrated by illustrating the impact of performance and the average ticket price to determine the weekly gross.
+
+Major Question: How can the total gross revenue be increased for Broadway?
+
+##sub Questions
+
+Question 1: Which shows usually attracts higher number of audience?
+
+Question 2: How do we predict the weekly gross depending on the average ticket price and performance? 
+
+#ABOUT THE DATASET:
+
+From the given dataset about Broadway League weekly grosses, we can see that it provides us information about the name of the show, theatre, avg_ticket_price, seats_sold, performances and so on. Therefore, this dataset will be extremely useful to extract certain information about how the total gross revenue can be increased.The most important aspects to be followed here are the pattern of the data. There are in total of 47524 rows and 14 columns.Only two of those variables are character variables and rest are numeric.After loading the dataset we will be converting the "show" and "theatre" into factor variable.
+
+```{r}
+#Loading the dataset
+
+grosses <-read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/grosses.csv', guess_max = 40000)
+
+#Running the glimpse function to have a better understanding of the dataset
+
+glimpse("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/grosses.csv', guess_max = 40000")
+
+#Rows: 47524 Columns: 14
+
+#Data Cleansing to convert the variables into factor variable
+
+#converting to factor variable for better understanding
+
+grosses <- grosses %>%
+  mutate_if(is.character, factor)
+
+#Running skim function to confirm if the variables have been converted into factor variables
+
+skim(grosses)
+
+
+```
+
+#DESCRIPTIVE or EXPLORATORY ANALYSIS
+
+```{r}
+#How many times each show runs in each theater?
+
+#In the below R chunks we have demonstrated the number of times each show runs in theater, this gives stakeholders an understanding which shows they should invest more.
+
+
+
+grosses %>%
+  count(show, theatre) %>%
+  arrange(desc(n))%>%
+  top_n(10) %>%
+  ggplot(aes(show, theatre))+
+  geom_col(shape = 21, colour = "orange", fill = "black", size = 5, stroke = 5)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+```{r}
+#Which are the top 5 shows that earns the highest weekly grosses?
+
+#In the below bar graph we have demonstrated the top 5 shows that earns the highest revenue across all Broadway theaters.
+
+grosses %>%
+  count(weekly_gross, show) %>%
+  arrange(desc(n)) %>%
+  top_n(5) %>%
+  ggplot(aes(show, weekly_gross))+
+  geom_col(colour = "black", fill = "red") +
+  coord_flip()
+
+```
+
+
+```{r}
+#Which show has sold the highest number of seats?
+
+#In the below bar graph we have illustrated the shows that have sold the highest number of seats. From this visualisation the stakeholders will be able to get an overview of number of the audience present for that show.
+
+
+Top_shows<-grosses %>%
+  filter(seats_sold > 17000) %>%
+  top_n(10)
+
+
+ggplot(Top_shows, aes(show, seats_sold)) +
+  geom_col(colour = "black", fill = "blue")+
+  coord_flip()
+
+```
+
+#PREDICTIVE ANALYSIS
+
+## Model 1 Predict the weekly gross using Linear Modelling
+
+### Step 1: Split the dataset into Training & Testing datasets.
+
+```{r}
+# We have run the skim function below to understand the dataset
+skim(grosses)
+
+#We have run the summary function below
+summary(grosses)
+
+###Below we have split the dataset into training and testing
+
+grosses_split <- initial_split(grosses)
+grosses_train <- training(grosses_split)
+grosses_test <- testing(grosses_split)
+
+```
+
+### Step 2: Pre-process the data.
+
+```{r}
+# 2.1: Set the recipe & get the ingredients
+
+grosses_recipe1 <- recipe(performances ~ ., data = grosses_train) 
+
+summary(grosses_recipe1)
+
+# 2.2 Write the recipe steps 
+
+grosses_recipe1 %>%
+  step_corr(all_predictors())
+
+#Outcome 1 & Predictor 13
+
+# 2.3 Get ready with the prep
+
+
+grosses_prep1 <- prep(grosses_recipe1, training = grosses_train)
+summary(grosses_prep1)
+
+#2.4 Bake the recipe 
+
+grosses_bake1 <- bake(grosses_prep1, grosses_train)
+
+```
+
+
+###Step 3: Build a model
+
+```{r}
+model1 <- lm(avg_ticket_price ~ ., data = grosses_bake1)
+summary(model1)
+
+```
+
+###Step 4: Evaluate the model
+
+From the Linear modeling output we can see that the P value has more three stars "***" , which indicates the model is more accurately able to predict the gross weekly income for Broadway musical theatre.However, the sum of residual is way far from "0", so in this case does not seem to be appropriate to predict the output accurately.On the other hand, from the output we can see that R-squared is 0.98 which is very close to "1" which means the data fit the model. 
+
+---------------------------------------------------------------------------------------------------------------------
+
+## Model 2 Predict the shows that attract the higher number of audience using Random Forest Modelling
+
+### STEP 1: Split the dataset into Training & Testing datasets
+
+```{r}
+#We have used the dataset called "Top_shows" to demonstrate the RandomForest modelling
+  
+#Below we have split the dataset into training and testing
+  
+Top_shows_split <- initial_split(Top_shows)
+Top_shows_train <- training(Top_shows_split)
+Top_shows_test <- testing(Top_shows_split)
+
+```
+
+### STEP 2: Pre-process the data
+
+```{r}
+# 2.1 Set the recipe & get the ingredients 
+
+#(Here we are assuming that the number of audience is equivalent to the number of "seats_sold")
+
+
+Top_shows_recipe2 <- recipe(show ~ ., data = Top_shows_train)
+
+summary(Top_shows_recipe2)
+
+
+# 2.2 Write the recipe steps
+
+
+Top_shows_recipe2 %>%
+  step_corr(all_predictors())
+
+# 2.3 Get ready with the prep
+
+
+Top_shows_prep2 <- prep(Top_shows_recipe2, training = Top_shows_train)
+
+
+#2.4 Bake the recipe
+
+
+Top_shows_bake2 <- bake(Top_shows_prep2, Top_shows_train)
+
+```
+
+###STEP 3: Build a model
+
+```{r}
+
+
+Top_shows <- Top_shows %>%
+  mutate_if(is.character, factor)
+
+skim(Top_shows)
+
+
+```
+
+
+```{r}
+model2 <- lm(seats_sold ~ ., data = Top_shows_bake2)
+summary(model2)
+```
+
+
+```{r}
+#In this bar graph we have visualised the top 10 theatres which has the maximum seats in the theatre
+
+grosses %>%
+  count(theatre, seats_in_theatre) %>%
+  arrange(desc(n))%>%
+  top_n(10) %>%
+  ggplot(aes(theatre, seats_in_theatre))+
+  geom_col(shape = 21, colour = "purple", fill = "grey", size = 5, stroke = 5)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+###Step 3: Evaluate the model
+
+From the Linear model 2 output we can see that the P value has less number of three stars "***" , which indicates the model will not accurately able to predict the gross weekly income for Broadway musical theatre depending on the number seats sold.However, the sum of residual is 13.481 closer to "0", so in this case it seems to be appropriate to predict the output accurately.Moreover, from the output we can see that R-squared is 0.9972 which is very close to "1" which means the data fit the model.
+
+#FINDINGS & CONCLUSION
+
+From analyzing the both Linear models we can clearly see that the prediction in each of these model is quite accurate.However, in the Linear model1 the output shows a pretty high residual value which is why we would consider the Linear model2 over the Linear model1 for this prediction.As per our modelling that has been illustrated above we were able to identify the top 10 shows which has the highest occupancy number. Therefore, if the investors invest in those shows it will be profitable for them
+
+#Recommendation
+
+As we all are well aware that Broadway theatre is planning to reopen in mid of this year with new rules after been closed since the start of the COVID-19 Pandemic.  We have pinned down 10 shows which has the highest occupancy number. Therefore, if the investors invest in those shows it is more likely to  be profitable for them & thus it will help them to earn more revenue. Through this report we have highlighted the fact that the theatre which got more number of seats should be able to accommodate more audience as per the new social distancing rules. So our recommendation is to invest in those top 10 shows and screen them in the top 10 theatre which got the highest number of seats. This will help to increase the total gross revenue for Broadway.
